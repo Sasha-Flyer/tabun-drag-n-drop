@@ -4,8 +4,8 @@
 // @version      0.1.1
 // @description  upload images by Drag&Dropping them
 // @author       Sasha-Flyer
-// @updateURL    https://gist.githubusercontent.com/Sasha-Flyer/b003d0c032b47428f1de10a0e5460a02/raw/TabunDragnDropImages.js
-// @downloadURL  https://gist.githubusercontent.com/Sasha-Flyer/b003d0c032b47428f1de10a0e5460a02/raw/TabunDragnDropImages.js
+// @updateURL    https://raw.githubusercontent.com/Sasha-Flyer/tabun-drag-n-drop/master/tabunDragnDrop.js
+// @downloadURL  https://raw.githubusercontent.com/Sasha-Flyer/tabun-drag-n-drop/master/tabunDragnDrop.js
 // ==/UserScript==
 
 /**
