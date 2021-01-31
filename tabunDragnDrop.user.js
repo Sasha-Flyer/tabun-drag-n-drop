@@ -1,36 +1,35 @@
 // ==UserScript==
 // @name         Tabun Image Drag&Drop
 // @include      https://tabun.everypony.*
-// @version      0.1.1
+// @include      https://bunker.lunavod.*
+// @version      0.1.2
 // @description  upload images by Drag&Dropping them
 // @author       Sasha-Flyer
 // @updateURL    https://raw.githubusercontent.com/Sasha-Flyer/tabun-drag-n-drop/master/tabunDragnDrop.js
 // @downloadURL  https://raw.githubusercontent.com/Sasha-Flyer/tabun-drag-n-drop/master/tabunDragnDrop.js
 // ==/UserScript==
 
+const MAX_PREVIEW_SIZE = 70;
+
 /**
  * Returns LS security key
  */
 const getTabunKey = () => {
-  const link = document.querySelector('li.item-signout a');
-  const href = link && link.href || '';
-  const query = href.split('?')[1] || '';
-  const key = query.split('=')[1] || '';
-  return key;
+  return LIVESTREET_SECURITY_KEY;
 }
 
 const sendImageToTabun = async (form) => {
   form.append('title', '');
   form.append('security_ls_key', getTabunKey());
-
-  const res = await fetch(location.origin + '/ajax/upload/image/', {
+  const res = await fetch(location.origin + '/ajax//upload/image', {
     method: 'POST',
-    body: form
+    body: form,
+    cookie: document.cookie
   });
-
   const text = await res.text();
-
-  const json = JSON.parse(new DOMParser().parseFromString(text, 'text/html').querySelector('textarea').textContent);
+  let json;
+  if (site === 'tabun') json = JSON.parse(new DOMParser().parseFromString(text, 'text/html').querySelector('textarea').textContent);
+  else json = { sText: `<img src="${JSON.parse(text).sText}" />` };
   return json
 }
 
@@ -57,7 +56,7 @@ async function dropHandler(ev) {
 
               // Resize the image
               var canvas = document.createElement('canvas'),
-                max_size = 70,// TODO : pull max size from a site config
+                max_size = MAX_PREVIEW_SIZE,
                 width = image.width,
                 height = image.height;
               form.width = width;
@@ -89,12 +88,14 @@ async function dropHandler(ev) {
         preview.lastModified = new Date();
         preview.name = "preview.png";
         previewForm = new FormData();
-        previewForm.append('img_file', preview);
+        previewForm.append(formName, preview);
+        previewForm.append('just_url', 1);
         previewForm.iterFile = iterFile;
       }
       fullSize += file.size;
       iterFile += 1;
-      form.append('img_file', file);
+      form.append(formName, file);
+      form.append('just_url', 1);
       form.iterFile = iterFile;
       return { form, previewForm };
     });
@@ -115,10 +116,10 @@ async function dropHandler(ev) {
       }
       spoilerName += '\n';
     }
-    autoNameSpoilers && !separateSpoilers ? spoilerName += names.toString().split(',').join(" ") : !separateSpoilers ? spoilerName += prompt("Введите название спойлера") : '';
+    autoNameSpoilers && !separateSpoilers ? spoilerName += names.toString().split(',').join(" ") : !separateSpoilers ? spoilerName += `${prompt("Введите название спойлера")} ` : '';
     let currentTemplate = 0;
     if (!separateSpoilers) textPlace.value += `\n<span class="spoiler"><span class="spoiler-title">${spoilerName}</span><span class="spoiler-body">`;
-    const wide = document.getElementById("widemode");
+    const wide = document.getElementById("widemode") || document.getElementById("rightbar");
     const saved = wide.outerHTML;
     multiplePaste(forms).then(async (templatesArray) => {
       for (const template of templatesArray) {
@@ -130,11 +131,11 @@ async function dropHandler(ev) {
           if (autoNameSpoilers) imageTemplate += names[currentTemplate];
           else {
             window.innerWidth > forms[currentTemplate].form.width ? wide.innerHTML = template : wide.innerHTML = template.replace("/>", `width="${window.innerWidth}" >`);
-
+            if (site !== 'tabun') wide.style.width = `${window.innerWidth}px`;
             await new Promise(function (resolve, reject) {
               wide.children[0].onload = () => {
                 setTimeout(() => { // некоторые браузеры оставляют белый экран даже после onload
-                  imageTemplate += prompt(`Введите название спойлера для ${names[currentTemplate]}`);
+                  imageTemplate += `${prompt(`Введите название спойлера для ${names[currentTemplate]}`)} `;
                   resolve();
                 }, 100);
               }
@@ -147,7 +148,10 @@ async function dropHandler(ev) {
         textPlace.value = textPlace.value + imageTemplate + template + '\n';
         if (separateSpoilers) textPlace.value += '</span></span> \n';
       };
-      if (separateSpoilers && !autoNameSpoilers) wide.outerHTML = saved;
+      if (separateSpoilers && !autoNameSpoilers) {
+        wide.outerHTML = saved
+        if (site !== 'tabun') wide.style.width = `64px`;
+      };
       if (!separateSpoilers) textPlace.value += '</span></span> \n';
 
       if (topicPlace) topicPlace.value += ` [Вес поста: ${fullSize < 1000 ? fullSize + " байт" :
@@ -158,6 +162,13 @@ async function dropHandler(ev) {
 
 const multiplePaste = async (ev, previews = false) => (await Promise.all(ev.map(image => sendImageToTabun(previews ? image.previewForm : image.form)))).map(res => res.sText || '');
 
+let site = 'tabun';
+let formName = 'img_file';
+
+if (document.URL.slice(8, 22) === 'bunker.lunavod') {
+  site = 'bunker';
+  formName = 'img_file[]'
+};
 
 let textPlace = document.getElementById("form_comment_text");
 let topicPlace;
