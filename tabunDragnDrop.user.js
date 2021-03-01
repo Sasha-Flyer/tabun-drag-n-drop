@@ -2,20 +2,24 @@
 // @name         Tabun Image Drag&Drop
 // @include      https://tabun.everypony.*
 // @include      https://bunker.lunavod.*
-// @version      0.1.3
+// @version      0.1.4
 // @description  upload images by Drag&Dropping them
 // @author       Sasha-Flyer
 // @updateURL    https://raw.githubusercontent.com/Sasha-Flyer/tabun-drag-n-drop/master/tabunDragnDrop.js
 // @downloadURL  https://raw.githubusercontent.com/Sasha-Flyer/tabun-drag-n-drop/master/tabunDragnDrop.js
 // ==/UserScript==
-const src = `
+
 const MAX_PREVIEW_SIZE = 70;
 
 /**
  * Returns LS security key
  */
 const getTabunKey = () => {
-  return LIVESTREET_SECURITY_KEY;
+  const link = document.querySelector('li.item-signout a')
+  const href = link && link.href || ''
+  const query = href.split('?')[1] || ''
+  const key = query.split('=')[1] || ''
+  return key
 }
 
 const sendImageToTabun = async (form) => {
@@ -29,13 +33,11 @@ const sendImageToTabun = async (form) => {
   const text = await res.text();
   let json;
   if (site === 'tabun') json = JSON.parse(new DOMParser().parseFromString(text, 'text/html').querySelector('textarea').textContent);
-  else json = { sText: '<img src="' + JSON.parse(text).sText  + '" />' };
-  
+  else json = { sText: '<img src=' + JSON.parse(text).sText +  ' />' };
   return json
 }
 
 async function dropHandler(ev) {
-  console.log('done');
   const autoNameSpoilers = ev.altKey;
   const separateSpoilers = ev.shiftKey;
   const loadPreview = ev.ctrlKey;
@@ -113,52 +115,53 @@ async function dropHandler(ev) {
         spoilerName += form;
         if (currentRowCount === square) {
           currentRowCount = 0;
-          spoilerName += '<br>';
+          spoilerName += '\n';
         }
       }
-      spoilerName += '<br>';
+      spoilerName += '\n';
     }
-    autoNameSpoilers && !separateSpoilers ? spoilerName += ' ' : !separateSpoilers ? spoilerName += prompt("Введите название спойлера") + ' ' : '';
+    autoNameSpoilers && !separateSpoilers ? spoilerName += " " : !separateSpoilers ? spoilerName += `${prompt("Введите название спойлера")} ` : '';
     let currentTemplate = 0;
-    if (!separateSpoilers) textPlace.value += '<br><span class="spoiler"><span class="spoiler-title">' + spoilerName + '</span><span class="spoiler-body">';
+    if (!separateSpoilers) textPlace.value += `\n<span class="spoiler"><span class="spoiler-title">${spoilerName}</span><span class="spoiler-body">`;
     const wide = document.getElementById("widemode") || document.getElementById("rightbar");
     const saved = wide.outerHTML;
-    multiplePaste(forms).then(async (templatesArray) => {
+    let templatesArray = await multiplePaste(forms);
+
+    {
       for (const template of templatesArray) {
-        console.log(template);
         let imageTemplate = '';
         if (separateSpoilers) {
-          imageTemplate += '<span class="spoiler"><span class="spoiler-title"><br>';
+          imageTemplate += `<span class="spoiler"><span class="spoiler-title">\n`;
           loadPreview ? imageTemplate += previewForms[currentTemplate] : '';
           if (autoNameSpoilers) imageTemplate += ' ';
           else {
-            window.innerWidth > forms[currentTemplate].form.width ? wide.innerHTML = template : wide.innerHTML = template.replace("/>", 'width="' + window.innerWidth + '" >');
-            if (site !== 'tabun') wide.style.width = window.innerWidth + 'px';
+            window.innerWidth > forms[currentTemplate].form.width ? wide.innerHTML = template : wide.innerHTML = template.replace("/>", `width="${window.innerWidth}" >`);
+            if (site !== 'tabun') wide.style.width = `${window.innerWidth}px`;
             await new Promise(function (resolve, reject) {
               wide.children[0].onload = () => {
                 setTimeout(() => { // некоторые браузеры оставляют белый экран даже после onload
-                  imageTemplate += prompt('Введите название спойлера для' + names[currentTemplate] ) + ' ';
+                  imageTemplate += `${prompt(`Введите название спойлера для ${names[currentTemplate]}`)} `;
                   resolve();
                 }, 100);
               }
             });
           }
           currentTemplate += 1;
-          imageTemplate += '<br></span><br>';
-          imageTemplate += '<span class="spoiler-body"><br>';
+          imageTemplate += '\n</span>\n';
+          imageTemplate += '<span class="spoiler-body">\n';
         }
-        textPlace.value = textPlace.value + imageTemplate + template + '<br>';
-        if (separateSpoilers) textPlace.value += '</span></span> <br>';
+        textPlace.value = textPlace.value + imageTemplate + template + '\n';
+        if (separateSpoilers) textPlace.value += '</span></span> \n';
       };
       if (separateSpoilers && !autoNameSpoilers) {
         wide.outerHTML = saved
-        if (site !== 'tabun') wide.style.width = '64px';
+        if (site !== 'tabun') wide.style.width = `64px`;
       };
-      if (!separateSpoilers) textPlace.value += '</span></span> <br>';
-      const totalSize = fullSize < 1000 ? fullSize + " байт" :
-        fullSize < 1000000 ? (fullSize/1000).toFixed(1) + " КБ" : (fullSize/1000000).toFixed(1) + " МБ";
-      if (topicPlace) topicPlace.value += ' [Вес поста: ' + totalSize + ']';
-    });
+      if (!separateSpoilers) textPlace.value += '</span></span> \n';
+
+      if (topicPlace) topicPlace.value += ` [Вес поста: ${fullSize < 1000 ? fullSize + " байт" :
+        fullSize < 1000000 ? (fullSize/1000).toFixed(1) + " КБ" : (fullSize/1000000).toFixed(1) + " МБ"}]`;
+    };
   }
 }
 
@@ -180,6 +183,18 @@ if (!textPlace) {
 }
 
 textPlace.ondrop = dropHandler;
+textPlace.addEventListener("dragenter", dragenter, false);
+textPlace.addEventListener("dragover", dragover, false);
+
+function dragenter(e) {
+  e.stopPropagation();
+  e.preventDefault();
+}
+
+function dragover(e) {
+  e.stopPropagation();
+  e.preventDefault();
+}
 
 const dataURLToBlob = function(dataURL) {
   const BASE64_MARKER = ';base64,';
@@ -204,9 +219,3 @@ const dataURLToBlob = function(dataURL) {
 
   return new Blob([uInt8Array], {type: contentType});
 }
-`
-
-const script = document.createElement('script');
-script.textContent = src;
-document.body.appendChild(script);
-console.log('drag n drop ready');
