@@ -2,11 +2,11 @@
 // @name         Tabun Image Drag&Drop
 // @include      https://tabun.everypony.*
 // @include      https://bunker.lunavod.*
-// @version      0.1.4
+// @version      0.1.4.1
 // @description  upload images by Drag&Dropping them
 // @author       Sasha-Flyer
-// @updateURL    https://raw.githubusercontent.com/Sasha-Flyer/tabun-drag-n-drop/master/tabunDragnDrop.js
-// @downloadURL  https://raw.githubusercontent.com/Sasha-Flyer/tabun-drag-n-drop/master/tabunDragnDrop.js
+// @updateURL    https://github.com/Sasha-Flyer/tabun-drag-n-drop/raw/master/tabunDragnDrop.user.js
+// @downloadURL  https://github.com/Sasha-Flyer/tabun-drag-n-drop/raw/master/tabunDragnDrop.user.js
 // ==/UserScript==
 
 const MAX_PREVIEW_SIZE = 70;
