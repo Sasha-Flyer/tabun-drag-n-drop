@@ -2,7 +2,7 @@
 // @name         Tabun Image Drag&Drop
 // @include      https://tabun.everypony.*
 // @include      https://bunker.lunavod.*
-// @version      0.1.4.1
+// @version      0.1.5
 // @description  upload images by Drag&Dropping them
 // @author       Sasha-Flyer
 // @updateURL    https://github.com/Sasha-Flyer/tabun-drag-n-drop/raw/master/tabunDragnDrop.user.js
@@ -135,7 +135,7 @@ async function dropHandler(ev) {
           loadPreview ? imageTemplate += previewForms[currentTemplate] : '';
           if (autoNameSpoilers) imageTemplate += ' ';
           else {
-            window.innerWidth > forms[currentTemplate].form.width ? wide.innerHTML = template : wide.innerHTML = template.replace("/>", `width="${window.innerWidth}" >`);
+            wide.innerHTML = template.replace("/>", `width="${window.innerWidth/2}" >`);
             if (site !== 'tabun') wide.style.width = `${window.innerWidth}px`;
             await new Promise(function (resolve, reject) {
               wide.children[0].onload = () => {
